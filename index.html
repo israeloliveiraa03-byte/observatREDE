@@ -219,6 +219,19 @@
             .chat-window { width: 300px; bottom: 80px; right: 16px; }
             .chat-button { padding: 8px 16px; }
         }
+        /* Estilo para as siglas dos estados no mapa */
+        .state-label {
+            background: rgba(0,0,0,0.6);
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            text-align: center;
+            border-radius: 12px;
+            padding: 2px 5px;
+            border: 1px solid white;
+            white-space: nowrap;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -263,7 +276,7 @@
     </div>
     <div class="chart-card" style="padding: 0 0 12px 0;">
         <div class="map-container" id="map"></div>
-        <div class="chart-note">📌 Passe o mouse sobre cada estado para ver indicadores. Cor mais escura = maior valor do indicador selecionado.</div>
+        <div class="chart-note">📌 Passe o mouse sobre os estados para ver detalhes. Cor laranja = com dados, cinza = sem dados. As siglas estão fixas no mapa.</div>
     </div>
 
     <div class="comparator-box">
@@ -416,8 +429,10 @@
         return "Não informado";
     }
     
+    // CORREÇÃO IMPORTANTE: getAvaliacao agora captura todas as categorias corretamente
     function getAvaliacao(row) { 
         let av = getSafe(row, "23. Como você avalia a qualidade da Educação Escolar Quilombola no município?"); 
+        if (!av || av === "") return "Não avaliou";
         av = av.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (av.includes("excelente") || av.includes("otima") || av.includes("ótima")) return "Excelente";
         if (av.includes("boa") || av.includes("muito boa")) return "Boa";
@@ -713,28 +728,70 @@
         tbody.innerHTML = rows;
     }
 
+    // ========== MAPA CORRIGIDO COM SIGLAS E FUNDO CINZA PARA ESTADOS SEM DADOS ==========
     function updateMap() {
         if (!map) return;
         let indicator = document.getElementById('mapIndicator').value;
         let maxVal = 0;
         for (let uf in ufAggregated) maxVal = Math.max(maxVal, parseFloat(ufAggregated[uf][indicator]) || 0);
         maxVal = Math.max(maxVal, 1);
+        
         fetch('https://raw.githubusercontent.com/codeforamerica/click_that_hood/master/public/data/brazil-states.geojson')
             .then(res => res.ok ? res.json() : Promise.reject())
             .then(geo => {
                 map.eachLayer(l => { if (!!l.feature) map.removeLayer(l); });
+                // Remover também marcadores de sigla antigos, se existirem
+                if (window.stateLabelsLayer) map.removeLayer(window.stateLabelsLayer);
+                
+                // Adicionar camada de polígonos com estilo condicional
                 L.geoJSON(geo, {
                     style: (f) => {
                         let uf = f.properties.sigla;
+                        let hasData = ufAggregated[uf] && (ufAggregated[uf].total_respostas > 0 || ufAggregated[uf].total_escolas > 0);
+                        if (!hasData) {
+                            return { fillColor: '#cccccc', weight: 1, opacity: 1, color: 'white', fillOpacity: 0.5 };
+                        }
                         let val = ufAggregated[uf] ? parseFloat(ufAggregated[uf][indicator]) || 0 : 0;
                         return { fillColor: '#e67e22', weight: 1, opacity: 1, color: 'white', fillOpacity: 0.2 + (val / maxVal) * 0.7 };
                     },
                     onEachFeature: (f, l) => {
                         let uf = f.properties.sigla;
                         let d = ufAggregated[uf] || {};
-                        l.bindTooltip(`<b>${f.properties.nome}</b><br>📋 Respostas: ${d.total_respostas || 0}<br>🏫 Escolas: ${d.total_escolas || 0}<br>🏠 Dentro: ${d.escolas_dentro || 0}<br>⚠️ Racismo: ${d.perc_racismo || 0}%<br>🚫 Fechamento: ${d.perc_fechamento || 0}%<br>🎓 Oferta EM: ${d.perc_em || 0}%`);
+                        let tooltipContent = `<b>${f.properties.nome} (${uf})</b><br>`;
+                        if (d.total_respostas || d.total_escolas) {
+                            tooltipContent += `📋 Respostas: ${d.total_respostas || 0}<br>🏫 Escolas: ${d.total_escolas || 0}<br>🏠 Dentro: ${d.escolas_dentro || 0}<br>⚠️ Racismo: ${d.perc_racismo || 0}%<br>🚫 Fechamento: ${d.perc_fechamento || 0}%<br>🎓 Oferta EM: ${d.perc_em || 0}%`;
+                        } else {
+                            tooltipContent += `⚠️ Nenhum dado disponível para este estado.`;
+                        }
+                        l.bindTooltip(tooltipContent);
                     }
                 }).addTo(map);
+                
+                // Adicionar labels permanentes com as siglas dos estados (usando coordenadas aproximadas dos centróides)
+                const stateCentroids = {
+                    'AC': [-9.023, -70.811], 'AL': [-9.571, -36.782], 'AP': [1.998, -51.99], 'AM': [-3.465, -62.216],
+                    'BA': [-12.579, -41.701], 'CE': [-5.498, -39.321], 'DF': [-15.799, -47.864], 'ES': [-19.183, -40.308],
+                    'GO': [-15.934, -50.143], 'MA': [-5.425, -45.439], 'MT': [-12.682, -56.922], 'MS': [-20.442, -54.646],
+                    'MG': [-18.512, -44.555], 'PA': [-3.416, -52.359], 'PB': [-7.276, -36.731], 'PR': [-24.625, -51.662],
+                    'PE': [-8.284, -40.312], 'PI': [-6.876, -42.735], 'RJ': [-22.200, -42.867], 'RN': [-5.779, -36.591],
+                    'RS': [-30.166, -53.497], 'RO': [-10.829, -63.458], 'RR': [1.987, -61.278], 'SC': [-27.242, -50.218],
+                    'SP': [-22.000, -48.986], 'SE': [-10.574, -37.201], 'TO': [-10.184, -48.333]
+                };
+                const labelLayer = L.layerGroup();
+                for (let [sigla, coords] of Object.entries(stateCentroids)) {
+                    const label = L.marker(coords, {
+                        icon: L.divIcon({
+                            className: 'state-label',
+                            html: sigla,
+                            iconSize: [30, 20],
+                            iconAnchor: [15, 10]
+                        }),
+                        interactive: false
+                    });
+                    labelLayer.addLayer(label);
+                }
+                labelLayer.addTo(map);
+                window.stateLabelsLayer = labelLayer;
             })
             .catch(() => {
                 map.eachLayer(l => { if (!!l.feature) map.removeLayer(l); });
@@ -804,7 +861,7 @@
             return;
         }
         
-        let html = '<table class="pivot-table"><thead><tr><th>' + rowVar + ' \\ ' + colVar + '</th>' + cols.map(c=>`<th>${escapeHtml(c)}</th>`).join('') + '<th>Total</th></tr></thead><tbody>'; 
+        let html = '<table class="pivot-table"><thead><tr><th>' + rowVar + ' \\ ' + colVar + '</th>' + cols.map(c=>`<th>${escapeHtml(c)}</th>`).join('') + '<th>Total</th><tr></thead><tbody>'; 
         for (let r of rows) { 
             let rowTotal = 0; 
             html += `<tr><th>${escapeHtml(r)}</th>`; 
@@ -815,7 +872,7 @@
             } 
             html += `<td><strong>${rowTotal}</strong></td></tr>`; 
         } 
-        html += '</tbody></td>';
+        html += '</tbody></table>';
         html += `<div class="chart-note" style="margin-top:8px;">📊 Total de registros considerados: ${totalRegistros}</div>`;
         document.querySelector('#pivotTableContainer').innerHTML = html; 
     }
@@ -899,7 +956,7 @@
     document.getElementById('filterEtapa').addEventListener('change', applyFilters);
     document.getElementById('filterProfessores').addEventListener('change', applyFilters);
 
-    // ========== CHATBOT ==========
+    // ========== CHATBOT (mesmo já implementado) ==========
     const DEEPSEEK_API_KEY = "sk-64c631e9c44e427ebb051b26334f97c5";
     const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
@@ -1091,7 +1148,6 @@
     chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleUserQuestion(); });
     chatWin.style.display = 'none';
 
-    // Inicialização
     renderChartsGrid();
     renderAdvancedCharts();
     loadData();
