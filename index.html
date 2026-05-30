@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Central de sistematização de dados - Rede Nacional de Pesquisadoras e Pesquisadores Quilombolas (CONAQ)</title>
     
-    <!-- FAVICON – substitua "favicon.png" pelo caminho da sua imagem -->
     <link rel="icon" type="image/png" href="favicon.png">
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -14,45 +13,12 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
+        /* Seu CSS permanece o mesmo – omitido por brevidade, mas você deve mantê-lo */
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-            background-image: url('fundo-afro.png');
-            background-size: 420px;
-            background-repeat: repeat;
-            background-attachment: fixed;
-            background-position: center;
-            color: #1e2a3e;
-            position: relative;
-        }
-        @media (max-width: 800px) {
-            body { background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop'); }
-        }
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.65);
-            z-index: -2;
-        }
-        body::after {
-            content: "";
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 220px;
-            height: 220px;
-            background-image: url('espada-sao-jorge.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 0.12;
-            pointer-events: none;
-            z-index: -1;
-        }
+        body { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; background-image: url('fundo-afro.png'); background-size: 420px; background-repeat: repeat; background-attachment: fixed; background-position: center; color: #1e2a3e; position: relative; }
+        @media (max-width: 800px) { body { background-image: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop'); } }
+        body::before { content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.65); z-index: -2; }
+        body::after { content: ""; position: fixed; bottom: 20px; right: 20px; width: 220px; height: 220px; background-image: url('espada-sao-jorge.png'); background-size: contain; background-repeat: no-repeat; background-position: center; opacity: 0.12; pointer-events: none; z-index: -1; }
         .container { max-width: 1400px; margin: 0 auto; padding: 24px 20px 40px; position: relative; z-index: 1; }
         .hero { background: linear-gradient(135deg, #0b2b26 0%, #1e4a3b 100%); border-radius: 28px; padding: 32px 40px; margin-bottom: 32px; color: white; display: flex; align-items: center; gap: 30px; flex-wrap: wrap; }
         .hero-text { flex: 1; }
@@ -109,129 +75,26 @@
         .close-modal { float: right; font-size: 1.8rem; cursor: pointer; }
         @media (max-width: 700px) { .charts-grid { grid-template-columns: 1fr; } .hero { flex-direction: column; text-align: center; } }
 
-        .chat-button {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            background: #1e4a3b;
-            color: white;
-            border: none;
-            border-radius: 60px;
-            padding: 12px 20px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: 0.2s;
-        }
+        .chat-button { position: fixed; bottom: 24px; right: 24px; background: #1e4a3b; color: white; border: none; border-radius: 60px; padding: 12px 20px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
         .chat-button:hover { background: #e67e22; transform: scale(1.02); }
-        .chat-window {
-            position: fixed;
-            bottom: 90px;
-            right: 24px;
-            width: 380px;
-            max-width: calc(100vw - 48px);
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 12px 28px rgba(0,0,0,0.3);
-            display: none;
-            flex-direction: column;
-            z-index: 1001;
-            overflow: hidden;
-            font-size: 0.9rem;
-        }
-        .chat-header {
-            background: #1e4a3b;
-            color: white;
-            padding: 12px 16px;
-            font-weight: bold;
-            display: flex;
-            justify-content: space-between;
-        }
+        .chat-window { position: fixed; bottom: 90px; right: 24px; width: 380px; max-width: calc(100vw - 48px); background: white; border-radius: 24px; box-shadow: 0 12px 28px rgba(0,0,0,0.3); display: none; flex-direction: column; z-index: 1001; overflow: hidden; font-size: 0.9rem; }
+        .chat-header { background: #1e4a3b; color: white; padding: 12px 16px; font-weight: bold; display: flex; justify-content: space-between; }
         .chat-header span { cursor: pointer; }
-        .chat-messages {
-            height: 400px;
-            overflow-y: auto;
-            padding: 12px;
-            background: #fef9e6;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .chat-message {
-            max-width: 85%;
-            padding: 8px 12px;
-            border-radius: 18px;
-            line-height: 1.4;
-        }
-        .chat-message.bot {
-            background: #e9ecef;
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-        .chat-message.user {
-            background: #1e4a3b;
-            color: white;
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-        .chat-input-area {
-            display: flex;
-            border-top: 1px solid #ddd;
-            background: white;
-        }
-        .chat-input-area input {
-            flex: 1;
-            border: none;
-            padding: 12px;
-            border-radius: 0;
-        }
-        .chat-input-area button {
-            width: auto;
-            border-radius: 0;
-            background: #e67e22;
-            padding: 0 16px;
-        }
-        .typing-indicator {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            padding: 8px 12px;
-        }
-        .typing-indicator span {
-            width: 8px;
-            height: 8px;
-            background: #999;
-            border-radius: 50%;
-            animation: typing 1.4s infinite ease-in-out;
-        }
+        .chat-messages { height: 400px; overflow-y: auto; padding: 12px; background: #fef9e6; display: flex; flex-direction: column; gap: 8px; }
+        .chat-message { max-width: 85%; padding: 8px 12px; border-radius: 18px; line-height: 1.4; }
+        .chat-message.bot { background: #e9ecef; align-self: flex-start; border-bottom-left-radius: 4px; }
+        .chat-message.user { background: #1e4a3b; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .chat-input-area { display: flex; border-top: 1px solid #ddd; background: white; }
+        .chat-input-area input { flex: 1; border: none; padding: 12px; border-radius: 0; }
+        .chat-input-area button { width: auto; border-radius: 0; background: #e67e22; padding: 0 16px; }
+        .typing-indicator { display: flex; align-items: center; gap: 4px; padding: 8px 12px; }
+        .typing-indicator span { width: 8px; height: 8px; background: #999; border-radius: 50%; animation: typing 1.4s infinite ease-in-out; }
         .typing-indicator span:nth-child(1) { animation-delay: 0s; }
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes typing {
-            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-            30% { transform: translateY(-6px); opacity: 1; }
-        }
-        @media (max-width: 500px) {
-            .chat-window { width: 300px; bottom: 80px; right: 16px; }
-            .chat-button { padding: 8px 16px; }
-        }
-        /* Estilo para as siglas dos estados no mapa */
-        .state-label {
-            background: rgba(0,0,0,0.6);
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-            text-align: center;
-            border-radius: 12px;
-            padding: 2px 5px;
-            border: 1px solid white;
-            white-space: nowrap;
-            font-family: monospace;
-        }
+        @keyframes typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-6px); opacity: 1; } }
+        @media (max-width: 500px) { .chat-window { width: 300px; bottom: 80px; right: 16px; } .chat-button { padding: 8px 16px; } }
+        .state-label { background: rgba(0,0,0,0.6); color: white; font-weight: bold; font-size: 12px; text-align: center; border-radius: 12px; padding: 2px 5px; border: 1px solid white; white-space: nowrap; font-family: monospace; }
     </style>
 </head>
 <body>
@@ -319,8 +182,7 @@
     <div class="table-wrapper">
         <table id="dadosTable">
             <thead><tr><th>Comunidade</th><th>UF</th><th>Perfil</th><th>Relato</th><th>Sugestões</th></tr></thead>
-            <tbody><tr><td colspan="5">Carregando...</td></tr>
-        </tbody>
+            <tbody><tr><td colspan="5">Carregando...</td></tr></tbody>
         </table>
     </div>
 
@@ -369,7 +231,7 @@
     let schoolsCache = new Map();
     let chartConfigs = null;
 
-    // ========== FUNÇÕES DE EXTRAÇÃO CORRIGIDAS (robustas) ==========
+    // ========== FUNÇÕES AUXILIARES ==========
     function getSafe(row, key) {
         if (!row) return "";
         for (let k in row) {
@@ -430,21 +292,20 @@
         return "Não informado";
     }
     
-    // CORREÇÃO DEFINITIVA: identifica a coluna "GO" exata e classifica as avaliações
+    // CORREÇÃO DEFINITIVA: localiza a coluna "GO" de forma case-insensitive e lê o texto
     function getAvaliacao(row) {
-        // 1) Localizar a coluna com cabeçalho exato "GO" (após trim)
+        // 1) Procurar por qualquer chave que após trim e upper case seja "GO"
         let goValue = null;
         for (let key in row) {
-            let trimmedKey = key.trim();
-            if (trimmedKey === "GO") {
+            let cleanedKey = key.trim().toUpperCase();
+            if (cleanedKey === "GO") {
                 goValue = row[key];
                 break;
             }
         }
-        // Se encontrou e não está vazio, classifica
+        // Se encontrou e não está vazio, classifica o texto
         if (goValue && goValue.toString().trim() !== "") {
             let val = goValue.toString().trim();
-            // Normaliza para comparação case-insensitive
             let lowerVal = val.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
             if (lowerVal.includes("excelente") || lowerVal === "excelente") return "Excelente";
             if (lowerVal.includes("boa") || lowerVal === "boa") return "Boa";
@@ -453,7 +314,7 @@
             if (lowerVal.includes("péssima") || lowerVal.includes("pessima")) return "Ruim"; // mapeia péssima como ruim
             return "Não avaliou";
         }
-        // Fallback: pergunta original (caso a coluna GO não exista)
+        // 2) Fallback: pergunta original
         let av = getSafe(row, "23. Como você avalia a qualidade da Educação Escolar Quilombola no município?");
         if (!av || av === "") return "Não avaliou";
         av = av.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -597,7 +458,6 @@
     window.onclick = function(e) { if(e.target === document.getElementById('infoModal')) document.getElementById('infoModal').style.display="none"; };
 
     function isInfraPrecaria(val) { return val && (val.toLowerCase().includes("precária") || val.toLowerCase().includes("insuficiente") || val.toLowerCase().includes("inexistente")); }
-
     // ========== RENDERIZAÇÃO DE GRÁFICOS ==========
     function renderChartsGrid() {
         const allConfigs = [
