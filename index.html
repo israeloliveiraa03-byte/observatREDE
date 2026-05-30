@@ -430,26 +430,30 @@
         return "Não informado";
     }
     
-    // CORREÇÃO DEFINITIVA: getAvaliacao agora localiza a coluna "GO" de forma inteligente
+    // CORREÇÃO DEFINITIVA: identifica a coluna "GO" exata e classifica as avaliações
     function getAvaliacao(row) {
-        // 1) Tentar encontrar qualquer coluna cujo nome, após limpeza, seja exatamente "go"
+        // 1) Localizar a coluna com cabeçalho exato "GO" (após trim)
         let goValue = null;
         for (let key in row) {
-            let normalizedKey = key.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-            if (normalizedKey === 'go') {
+            let trimmedKey = key.trim();
+            if (trimmedKey === "GO") {
                 goValue = row[key];
                 break;
             }
         }
+        // Se encontrou e não está vazio, classifica
         if (goValue && goValue.toString().trim() !== "") {
-            let val = goValue.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            if (val.includes("excelente") || val.includes("otima") || val.includes("ótima")) return "Excelente";
-            if (val.includes("boa") || val.includes("muito boa")) return "Boa";
-            if (val.includes("regular")) return "Regular";
-            if (val.includes("ruim") || val.includes("pessima") || val.includes("péssima")) return "Ruim";
+            let val = goValue.toString().trim();
+            // Normaliza para comparação case-insensitive
+            let lowerVal = val.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            if (lowerVal.includes("excelente") || lowerVal === "excelente") return "Excelente";
+            if (lowerVal.includes("boa") || lowerVal === "boa") return "Boa";
+            if (lowerVal.includes("regular") || lowerVal === "regular") return "Regular";
+            if (lowerVal.includes("ruim") || lowerVal === "ruim") return "Ruim";
+            if (lowerVal.includes("péssima") || lowerVal.includes("pessima")) return "Ruim"; // mapeia péssima como ruim
             return "Não avaliou";
         }
-        // 2) Fallback: pergunta original 23
+        // Fallback: pergunta original (caso a coluna GO não exista)
         let av = getSafe(row, "23. Como você avalia a qualidade da Educação Escolar Quilombola no município?");
         if (!av || av === "") return "Não avaliou";
         av = av.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -742,8 +746,8 @@
         });
         currentFilteredRows = filtered;
         let tbody = document.querySelector('#dadosTable tbody');
-        if (!currentFilteredRows.length) { tbody.innerHTML = '<tr><td colspan="5">Nenhum registro com os filtros atuais.您</td></tr>'; return; }
-        let rows = currentFilteredRows.slice(0, 100).map(r => `<tr><td>${(getComunidade(r)||"Não informado").substring(0,65)}</td><td>${getUF(r)}</td><td>${getPerfil(r)}</td><td><small>${getRelato(r).substring(0,200)}</small></td><td><small>${getSugestoes(r).substring(0,200)}</small></td>`).join('');
+        if (!currentFilteredRows.length) { tbody.innerHTML = '<tr><td colspan="5">Nenhum registro com os filtros atuais.您</table></tr>'; return; }
+        let rows = currentFilteredRows.slice(0, 100).map(r => `<tr><td>${(getComunidade(r)||"Não informado").substring(0,65)}</td><td>${getUF(r)}</td><td>${getPerfil(r)}</td><td><small>${getRelato(r).substring(0,200)}</small></td>}<td><small>${getSugestoes(r).substring(0,200)}</small></td></tr>`).join('');
         tbody.innerHTML = rows;
     }
 
@@ -891,7 +895,7 @@
             } 
             html += `<td><strong>${rowTotal}</strong></td></tr>`; 
         } 
-        html += '</tbody></table>';
+        html += '</tbody><table>';
         html += `<div class="chart-note" style="margin-top:8px;">📊 Total de registros considerados: ${totalRegistros}</div>`;
         document.querySelector('#pivotTableContainer').innerHTML = html; 
     }
