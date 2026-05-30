@@ -319,7 +319,8 @@
     <div class="table-wrapper">
         <table id="dadosTable">
             <thead><tr><th>Comunidade</th><th>UF</th><th>Perfil</th><th>Relato</th><th>Sugestões</th></tr></thead>
-            <tbody><tr><td colspan="5">Carregando...</td></tr></tbody>
+            <tbody><tr><td colspan="5">Carregando...</td></tr>
+        </tbody>
         </table>
     </div>
 
@@ -429,9 +430,27 @@
         return "Não informado";
     }
     
-    // CORREÇÃO IMPORTANTE: getAvaliacao agora captura todas as categorias corretamente
-    function getAvaliacao(row) { 
-        let av = getSafe(row, "23. Como você avalia a qualidade da Educação Escolar Quilombola no município?"); 
+    // CORREÇÃO DEFINITIVA: getAvaliacao agora localiza a coluna "GO" de forma inteligente
+    function getAvaliacao(row) {
+        // 1) Tentar encontrar qualquer coluna cujo nome, após limpeza, seja exatamente "go"
+        let goValue = null;
+        for (let key in row) {
+            let normalizedKey = key.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+            if (normalizedKey === 'go') {
+                goValue = row[key];
+                break;
+            }
+        }
+        if (goValue && goValue.toString().trim() !== "") {
+            let val = goValue.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            if (val.includes("excelente") || val.includes("otima") || val.includes("ótima")) return "Excelente";
+            if (val.includes("boa") || val.includes("muito boa")) return "Boa";
+            if (val.includes("regular")) return "Regular";
+            if (val.includes("ruim") || val.includes("pessima") || val.includes("péssima")) return "Ruim";
+            return "Não avaliou";
+        }
+        // 2) Fallback: pergunta original 23
+        let av = getSafe(row, "23. Como você avalia a qualidade da Educação Escolar Quilombola no município?");
         if (!av || av === "") return "Não avaliou";
         av = av.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         if (av.includes("excelente") || av.includes("otima") || av.includes("ótima")) return "Excelente";
@@ -724,7 +743,7 @@
         currentFilteredRows = filtered;
         let tbody = document.querySelector('#dadosTable tbody');
         if (!currentFilteredRows.length) { tbody.innerHTML = '<tr><td colspan="5">Nenhum registro com os filtros atuais.您</td></tr>'; return; }
-        let rows = currentFilteredRows.slice(0, 100).map(r => `<tr><td>${(getComunidade(r)||"Não informado").substring(0,65)}</td><td>${getUF(r)}</td><td>${getPerfil(r)}</td>}<td><small>${getRelato(r).substring(0,200)}</small></td>}<td><small>${getSugestoes(r).substring(0,200)}</small></td></tr>`).join('');
+        let rows = currentFilteredRows.slice(0, 100).map(r => `<tr><td>${(getComunidade(r)||"Não informado").substring(0,65)}</td><td>${getUF(r)}</td><td>${getPerfil(r)}</td><td><small>${getRelato(r).substring(0,200)}</small></td><td><small>${getSugestoes(r).substring(0,200)}</small></td>`).join('');
         tbody.innerHTML = rows;
     }
 
@@ -861,7 +880,7 @@
             return;
         }
         
-        let html = '<table class="pivot-table"><thead><tr><th>' + rowVar + ' \\ ' + colVar + '</th>' + cols.map(c=>`<th>${escapeHtml(c)}</th>`).join('') + '<th>Total</th><tr></thead><tbody>'; 
+        let html = '<table class="pivot-table"><thead><tr><th>' + rowVar + ' \\ ' + colVar + '</th>' + cols.map(c=>`<th>${escapeHtml(c)}</th>`).join('') + '<th>Total</th></tr></thead><tbody>'; 
         for (let r of rows) { 
             let rowTotal = 0; 
             html += `<tr><th>${escapeHtml(r)}</th>`; 
@@ -956,7 +975,7 @@
     document.getElementById('filterEtapa').addEventListener('change', applyFilters);
     document.getElementById('filterProfessores').addEventListener('change', applyFilters);
 
-    // ========== CHATBOT (mesmo já implementado) ==========
+    // ========== CHATBOT ==========
     const DEEPSEEK_API_KEY = "sk-64c631e9c44e427ebb051b26334f97c5";
     const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 
